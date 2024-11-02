@@ -8,6 +8,7 @@
 
 void recuperarDatos(std::string nombreArchivoEntrada, std::vector<GrafoML<Coordenada, double>>& grafos);
 double calcularDistanciaEuclidiana(Coordenada c1, Coordenada c2);
+void escribirArchivoSalida(std::string nombreArchivoSalida, std::vector<GrafoML<Coordenada, double>>& grafos);
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
@@ -42,6 +43,9 @@ int main(int argc, char* argv[]) {
         grafos[i].encontrarCaminoHamiltonConCostoMinimo();
         std::cout << std::endl;
     }
+
+    // Llamar a la función para escribir el archivo de salida
+    escribirArchivoSalida(nombreArchivoSalida, grafos);
 
     return 0;
 }
@@ -104,4 +108,38 @@ double calcularDistanciaEuclidiana(Coordenada c1, Coordenada c2) {
     double deltaY2 = c2.obtenerY(); 
     
     return std::sqrt((deltaX - deltaX2) * (deltaX - deltaX2) + (deltaY - deltaY2) * (deltaY - deltaY2));
+}
+
+void escribirArchivoSalida(std::string nombreArchivoSalida, std::vector<GrafoML<Coordenada, double>>& grafos) {
+    std::ofstream archivoSalida(nombreArchivoSalida);
+    if (!archivoSalida.is_open()) {
+        std::cerr << "No fue posible abrir el archivo de salida" << std::endl;
+        return;
+    }
+
+    archivoSalida << grafos.size() << std::endl;
+
+    for (int i = 0; i < grafos.size(); ++i) {
+        grafos[i].encontrarCaminoHamiltonConCostoMinimo();
+        int numAgujeros = grafos[i].cantVertices() - 1;  // Excluir el punto inicial (0,0)
+        archivoSalida << numAgujeros << std::endl;
+
+        auto vertices = grafos[i].getVertices();
+
+        for (auto coord : vertices) {  // Evitamos el `const` al copiar `coord`
+            archivoSalida << coord.obtenerX() << " " << coord.obtenerY() << std::endl;
+        }
+
+        // Crear un vector de índices que representa el orden de visita de los vértices
+        std::vector<int> orden;
+        for (int j = 0; j < vertices.size(); ++j) {
+            orden.push_back(j);  // Agregamos cada índice al vector de orden
+        }
+
+        double distanciaTotal = grafos[i].calcularCostoRecorrido(orden);
+        archivoSalida << "Distancia total recorrida: " << distanciaTotal << " mm" << std::endl;
+    }
+
+    archivoSalida.close();
+    std::cout << "Archivo de salida generado exitosamente." << std::endl;
 }
